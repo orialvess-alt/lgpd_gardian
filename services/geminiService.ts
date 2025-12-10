@@ -65,39 +65,34 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
   const ai = getAiClient();
   if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente. Configure o .env." };
 
-  const prompt = `
-    Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
-    Descrição: "${description}"
-    
-    Determine a provável severidade (low, medium, high, ou critical) e forneça uma breve justificativa e ações imediatas recomendadas.
-    A análise deve ser escrita em Português do Brasil.
-    
-    Retorne a resposta como um objeto JSON válido com as chaves: "severity" (string enum: low, medium, high, critical) e "analysis" (string em português).
 export const generateLegalDocument = async (
-  prompt: string // Assumindo que o argumento 'prompt' vem daqui, ajuste se necessário
+  prompt: string
 ) => {
-  const ai = getAiClient(); // Certifique-se que getAiClient retorna 'new GoogleGenerativeAI(API_KEY)'
-  
+  const ai = getAiClient();
+  if (!ai) throw new Error("API Key error");
+
   try {
-    // CORREÇÃO: Sintaxe da nova biblioteca @google/generative-ai
+    // Configuração do modelo novo
     const model = ai.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const result = await model.generateContent(prompt);
-    const responseText = result.response.text(); // Agora é uma função
+    const text = result.response.text();
 
-    const json = JSON.parse(responseText || "{}");
+    const json = JSON.parse(text || "{}");
+    
+    // Mantendo a lógica de tipos que você já tinha
     return {
-      severity: json.severity || "MEDIUM", // Ajuste conforme seu enum
+      severity: json.severity || "MEDIUM", 
       analysis: json.analysis || "Não foi possível analisar o incidente."
     };
   } catch (error) {
     console.error("Gemini API Error:", error);
     return { severity: "MEDIUM", analysis: "Erro durante a análise. Verifique logs." };
   }
-};
+}; // <--- ESTA CHAVE E PONTO E VÍRGULA ERAM O PROBLEMA
 
 export const generateAwarenessPost = async (topic: string, category: string): Promise<{ title: string; content: string; quiz: any }> => {
   const ai = getAiClient();
@@ -127,14 +122,13 @@ export const generateAwarenessPost = async (topic: string, category: string): Pr
       "quiz": {
         "question": "A pergunta do teste",
         "options": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
-        "correctAnswerIndex": 0, // índice da resposta correta (0-3)
+        "correctAnswerIndex": 0,
         "explanation": "Breve explicação do porquê esta é a correta."
       }
     }
   `;
 
   try {
-    // CORREÇÃO: Sintaxe da nova biblioteca
     const model = ai.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       generationConfig: { responseMimeType: "application/json" }
@@ -142,7 +136,7 @@ export const generateAwarenessPost = async (topic: string, category: string): Pr
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-
+    
     return JSON.parse(text || "{}");
   } catch (error) {
     console.error("Gemini API Error:", error);
