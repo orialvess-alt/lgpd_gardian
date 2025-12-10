@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { IncidentSeverity, AwarenessCategory } from "../types";
 
 const getAiClient = () => {
