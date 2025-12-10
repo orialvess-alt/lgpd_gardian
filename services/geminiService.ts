@@ -1,13 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// ...
-
-const getAiClient = () => {
-  const apiKey = process.env.API_KEY; // ou como você pega a chave
-  if (!apiKey) return null;
-  return new GoogleGenerativeAI(apiKey);
-};
-import { IncidentSeverity, AwarenessCategory } from "../types";
+import { GoogleGenAI } from "@google/genai";
+import { IncidentSeverity, AwarenessCategory, Quiz } from "../types";
 
 const getAiClient = () => {
   // Vite replaces process.env.API_KEY with the actual string during build.
@@ -65,36 +57,37 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
   const ai = getAiClient();
   if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente. Configure o .env." };
 
-export const generateLegalDocument = async (
-  prompt: string
-) => {
-  const ai = getAiClient();
-  if (!ai) throw new Error("API Key error");
+  const prompt = `
+    Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
+    Descrição: "${description}"
+    
+    Determine a provável severidade (low, medium, high, ou critical) e forneça uma breve justificativa e ações imediatas recomendadas.
+    A análise deve ser escrita em Português do Brasil.
+    
+    Retorne a resposta como um objeto JSON válido com as chaves: "severity" (string enum: low, medium, high, critical) e "analysis" (string em português).
+  `;
 
   try {
-    // Configuração do modelo novo
-    const model = ai.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" }
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
     });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-
-    const json = JSON.parse(text || "{}");
-    
-    // Mantendo a lógica de tipos que você já tinha
+    const json = JSON.parse(response.text || "{}");
     return {
-      severity: json.severity || "MEDIUM", 
+      severity: (json.severity as IncidentSeverity) || IncidentSeverity.MEDIUM,
       analysis: json.analysis || "Não foi possível analisar o incidente."
     };
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return { severity: "MEDIUM", analysis: "Erro durante a análise. Verifique logs." };
+    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro durante a análise. Verifique logs." };
   }
-}; // <--- ESTA CHAVE E PONTO E VÍRGULA ERAM O PROBLEMA
+};
 
-export const generateAwarenessPost = async (topic: string, category: string): Promise<{ title: string; content: string; quiz: any }> => {
+export const generateAwarenessPost = async (topic: string, category: AwarenessCategory): Promise<{ title: string; content: string; quiz: Quiz | null }> => {
   const ai = getAiClient();
   if (!ai) throw new Error("Chave de API ausente. Verifique o .env");
 
@@ -122,22 +115,23 @@ export const generateAwarenessPost = async (topic: string, category: string): Pr
       "quiz": {
         "question": "A pergunta do teste",
         "options": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
-        "correctAnswerIndex": 0,
+        "correctAnswerIndex": 0, // índice da resposta correta (0-3)
         "explanation": "Breve explicação do porquê esta é a correta."
       }
     }
   `;
 
   try {
-    const model = ai.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" }
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
     });
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
     
-    return JSON.parse(text || "{}");
+    const text = response.text || "{}";
+    return JSON.parse(text);
   } catch (error) {
     console.error("Gemini API Error:", error);
     return {
