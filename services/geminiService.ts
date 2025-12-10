@@ -19,7 +19,7 @@ const cleanJsonString = (text: string): string => {
  * Retorna null se a chave não estiver configurada.
  */
 const getAiModel = (modelName: string = "gemini-1.5-flash", jsonMode: boolean = false) => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY;
 
   // Verificações de segurança para a chave
   if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
