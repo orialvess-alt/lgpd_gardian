@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateLegalDocument } from '../services/geminiService';
-import { FileText, Loader2, Download, RefreshCw, Bold, Italic, List, Heading, Type, Save, History, Clock, ChevronRight, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Download, RefreshCw, Bold, Italic, List, Heading, Type, Save, History, Clock, ChevronRight, Trash2, PenTool } from 'lucide-react';
 import { Tenant, LegalDoc, DocType } from '../types';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
@@ -38,6 +38,7 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
     onDeleteDocument
 }) => {
   const [docType, setDocType] = useState(DOC_TYPES[0]);
+  const [customTitle, setCustomTitle] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentDoc, setCurrentDoc] = useState<LegalDoc | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -53,12 +54,19 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
     }
   }, [currentDoc]);
 
+  const getEffectiveTitle = () => {
+      return docType === 'custom' ? customTitle : docType;
+  };
+
   const handleGenerate = async () => {
+    const title = getEffectiveTitle();
+    if (!title) return;
+
     setIsGenerating(true);
     // Mock data types for the demo context
     const dataTypes = ['Nome', 'Email', 'CPF', 'Endereço IP', 'Cookies', 'Dados Bancários'];
     
-    const markdownContent = await generateLegalDocument(docType, tenant.name, "Tecnologia e Serviços", dataTypes);
+    const markdownContent = await generateLegalDocument(title, tenant.name, "Tecnologia e Serviços", dataTypes);
     
     // Parse markdown to HTML
     const htmlContent = await marked.parse(markdownContent);
@@ -66,9 +74,9 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
     const newDoc: LegalDoc = {
         id: Math.random().toString(36).substr(2, 9),
         tenantId: tenant.id,
-        title: `${docType} - ${new Date().toLocaleDateString()}`,
+        title: `${title} - ${new Date().toLocaleDateString()}`,
         content: htmlContent,
-        type: DocType.PRIVACY_POLICY, // Simplified for mock
+        type: DocType.PRIVACY_POLICY, // Generic type
         version: 1,
         isPublished: false,
         createdAt: new Date().toISOString(),
@@ -78,6 +86,30 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
     onSaveDocument(newDoc);
     setCurrentDoc(newDoc);
     setIsGenerating(false);
+    setCustomTitle('');
+    if(docType === 'custom') setDocType(DOC_TYPES[0]);
+  };
+
+  const handleCreateManual = () => {
+    const title = getEffectiveTitle();
+    if (!title) return;
+
+    const newDoc: LegalDoc = {
+        id: Math.random().toString(36).substr(2, 9),
+        tenantId: tenant.id,
+        title: `${title} (Manual) - ${new Date().toLocaleDateString()}`,
+        content: `<h1>${title}</h1><p>Digite o conteúdo do seu documento aqui...</p>`,
+        type: DocType.PRIVACY_POLICY, // Generic type
+        version: 1,
+        isPublished: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    onSaveDocument(newDoc);
+    setCurrentDoc(newDoc);
+    setCustomTitle('');
+    if(docType === 'custom') setDocType(DOC_TYPES[0]);
   };
 
   const handleManualSave = () => {
@@ -175,7 +207,7 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
         {/* Generator Controls */}
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4 shrink-0">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Novo Documento</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
             <select 
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
@@ -184,17 +216,42 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
               {DOC_TYPES.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
+              <option value="custom">Outro (Personalizado)...</option>
             </select>
           </div>
 
-          <button 
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center gap-2 font-medium disabled:opacity-70 transition-all shadow-sm text-sm"
-          >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Gerar Minuta
-          </button>
+          {docType === 'custom' && (
+             <div className="animate-fade-in">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Documento</label>
+                <input 
+                    type="text"
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    placeholder="Ex: Termo de Uso de Wi-Fi"
+                    className="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-50 text-gray-900 focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                />
+             </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <button 
+                onClick={handleGenerate}
+                disabled={isGenerating || (docType === 'custom' && !customTitle)}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center gap-2 font-medium disabled:opacity-70 transition-all shadow-sm text-sm"
+            >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Gerar com IA
+            </button>
+            
+            <button 
+                onClick={handleCreateManual}
+                disabled={isGenerating || (docType === 'custom' && !customTitle)}
+                className="w-full py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg flex items-center justify-center gap-2 font-medium disabled:opacity-70 transition-all shadow-sm text-sm"
+            >
+                <PenTool className="w-4 h-4" />
+                Criar Rascunho Manual
+            </button>
+          </div>
         </div>
 
         {/* History List */}
@@ -279,7 +336,7 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10 gap-4">
               <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
               <div className="text-center">
-                <p className="text-gray-800 font-medium">Redigindo {docType}...</p>
+                <p className="text-gray-800 font-medium">Redigindo {getEffectiveTitle()}...</p>
                 <p className="text-sm text-gray-500">Analisando base legal e conformidade.</p>
               </div>
             </div>
@@ -297,6 +354,7 @@ export const LegalGenerator: React.FC<LegalGeneratorProps> = ({
                 contentEditable
                 className="w-full h-full p-8 outline-none overflow-y-auto prose prose-sm max-w-none text-gray-900 bg-white"
                 style={{ minHeight: '100%' }}
+                onInput={() => {}} // Could trigger auto-save or dirty state here
             />
           )}
         </div>

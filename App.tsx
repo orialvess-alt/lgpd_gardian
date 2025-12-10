@@ -32,6 +32,12 @@ const App = () => {
       planStatus: 'active',
       createdAt: new Date().toISOString(),
       settings: {
+        dpoName: "Dr. João Silva",
+        dpoEmail: "dpo@acmecorp.com",
+        privacyCommittee: [
+            { id: 'cm-1', name: 'Maria Souza', function: 'RH', email: 'maria.rh@acmecorp.com' },
+            { id: 'cm-2', name: 'Carlos Tech', function: 'CTO', email: 'carlos.ti@acmecorp.com' }
+        ],
         theme: {
             primaryColor: '#059669', // Emerald-600
             sidebarColor: '#1e293b', // Slate-800

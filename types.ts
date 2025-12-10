@@ -59,6 +59,13 @@ export interface SecurityConfig {
   passwordPolicy: 'standard' | 'strong';
 }
 
+export interface CommitteeMember {
+  id: string;
+  name: string;
+  function: string;
+  email: string;
+}
+
 export interface Tenant {
   id: string; // UUID
   cnpj: string; // XX.XXX.XXX/0001-XX
@@ -68,6 +75,7 @@ export interface Tenant {
   settings?: {
     dpoName?: string;
     dpoEmail?: string;
+    privacyCommittee?: CommitteeMember[];
     theme?: ThemeConfig;
     security?: SecurityConfig;
   };

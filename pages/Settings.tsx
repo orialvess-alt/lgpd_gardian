@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Tenant, User, UserRole, ThemeConfig, SecurityConfig } from '../types';
-import { Building2, Palette, Users, Shield, Save, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Tenant, User, UserRole, ThemeConfig, SecurityConfig, CommitteeMember } from '../types';
+import { Building2, Palette, Users, Shield, Save, Plus, Trash2, Upload, X, UserPlus } from 'lucide-react';
 
 interface SettingsProps {
   tenant: Tenant;
@@ -36,6 +36,10 @@ export const Settings: React.FC<SettingsProps> = ({
       logoUrl: tenant.settings?.theme?.logoUrl || ''
     });
 
+    // Committee State
+    const [committee, setCommittee] = useState<CommitteeMember[]>(tenant.settings?.privacyCommittee || []);
+    const [newMember, setNewMember] = useState({ name: '', function: '', email: '' });
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -57,6 +61,22 @@ export const Settings: React.FC<SettingsProps> = ({
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const handleAddMember = () => {
+        if (!newMember.name || !newMember.function || !newMember.email) return;
+        const member: CommitteeMember = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: newMember.name,
+            function: newMember.function,
+            email: newMember.email
+        };
+        setCommittee([...committee, member]);
+        setNewMember({ name: '', function: '', email: '' });
+    };
+
+    const handleRemoveMember = (id: string) => {
+        setCommittee(committee.filter(m => m.id !== id));
+    };
+
     const handleSave = () => {
       onUpdateTenant({
         ...tenant,
@@ -66,6 +86,7 @@ export const Settings: React.FC<SettingsProps> = ({
           ...tenant.settings,
           dpoName: formData.dpoName,
           dpoEmail: formData.dpoEmail,
+          privacyCommittee: committee,
           // Preserve other theme settings but update logo
           theme: {
               primaryColor: tenant.settings?.theme?.primaryColor || '#10b981',
@@ -75,11 +96,11 @@ export const Settings: React.FC<SettingsProps> = ({
           }
         }
       });
-      alert('Perfil e Logotipo atualizados com sucesso!');
+      alert('Perfil, Logotipo e Comitê atualizados com sucesso!');
     };
 
     return (
-      <div className="max-w-3xl animate-fade-in">
+      <div className="max-w-3xl animate-fade-in pb-10">
         <h2 className="text-xl font-bold text-gray-800 mb-6">Dados da Organização</h2>
         
         {/* Logo Section */}
@@ -162,6 +183,86 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
              </div>
              <p className="text-xs text-gray-500 mt-2">Estes dados aparecerão automaticamente em políticas de privacidade e documentos gerados.</p>
+          </div>
+
+          <div className="border-t border-gray-100 pt-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-gray-500" />
+                Comitê de Privacidade e Grupo de Apoio
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">Cadastre os membros responsáveis pela governança de dados na empresa.</p>
+            
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Nome do Membro</label>
+                        <input 
+                            value={newMember.name} 
+                            onChange={e => setNewMember({...newMember, name: e.target.value})}
+                            className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 outline-none" 
+                            placeholder="Nome"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">Função</label>
+                        <input 
+                            value={newMember.function} 
+                            onChange={e => setNewMember({...newMember, function: e.target.value})}
+                            className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 outline-none" 
+                            placeholder="Ex: Jurídico, TI, RH"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">E-mail</label>
+                        <input 
+                            value={newMember.email} 
+                            onChange={e => setNewMember({...newMember, email: e.target.value})}
+                            className="w-full bg-white border border-gray-300 rounded-lg p-2 text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 outline-none" 
+                            placeholder="email@empresa.com"
+                        />
+                    </div>
+                </div>
+                <button 
+                    onClick={handleAddMember}
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                >
+                    <UserPlus className="w-4 h-4" /> Adicionar Membro
+                </button>
+            </div>
+
+            {committee.length > 0 ? (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-semibold">
+                            <tr>
+                                <th className="p-3">Nome</th>
+                                <th className="p-3">Função</th>
+                                <th className="p-3">E-mail</th>
+                                <th className="p-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-sm">
+                            {committee.map(member => (
+                                <tr key={member.id}>
+                                    <td className="p-3 font-medium text-gray-900">{member.name}</td>
+                                    <td className="p-3 text-gray-600">{member.function}</td>
+                                    <td className="p-3 text-gray-500">{member.email}</td>
+                                    <td className="p-3 text-right">
+                                        <button 
+                                            onClick={() => handleRemoveMember(member.id)}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <p className="text-center text-gray-400 text-sm italic py-4">Nenhum membro adicionado ao comitê.</p>
+            )}
           </div>
 
           <div className="pt-6">
