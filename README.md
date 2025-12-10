@@ -1,20 +1,34 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# LGPD Guardian SaaS
 
-# Run and deploy your AI Studio app
+Plataforma de conformidade LGPD multilocatário com IA.
 
-This contains everything you need to run your app locally.
+## Configuração do Projeto Google AI (Gemini)
 
-View your app in AI Studio: https://ai.studio/apps/drive/18d9dGm0I_AlUlxThvOIInrmCXTCdyXIC
+**Projeto Vinculado:** `api_lgpd_guardian` (ID: `607274394750`)
 
-## Run Locally
+### 1. Desenvolvimento Local
 
-**Prerequisites:**  Node.js
+A chave de API já foi configurada no arquivo `.env`. Basta rodar:
 
+```bash
+npm install
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 2. Deploy na Vercel
+
+Ao publicar este projeto na Vercel, o arquivo `.env` é ignorado por segurança. Você deve configurar a chave manualmente:
+
+1.  Acesse seu projeto no Dashboard da Vercel.
+2.  Vá em **Settings** (Configurações) -> **Environment Variables** (Variáveis de Ambiente).
+3.  Adicione uma nova variável:
+    *   **Key:** `API_KEY`
+    *   **Value:** `AIzaSyDa8pnfqkPiBJBAUnL6wEL63XWdjEnHfzU`
+4.  Clique em **Save**.
+5.  Vá em **Deployments** e faça um "Redeploy" para que a nova variável entre em vigor.
+
+## Comandos Úteis
+
+*   **Instalar dependências:** `npm install`
+*   **Rodar localmente:** `npm run dev`
+*   **Build de produção:** `npm run build`

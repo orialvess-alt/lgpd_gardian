@@ -3,9 +3,13 @@ import { IncidentSeverity, AwarenessCategory } from "../types";
 
 const getAiClient = () => {
   // Vite replaces process.env.API_KEY with the actual string during build.
-  // We check for specific undefined string or null to avoid runtime crashes.
+  // We check for specific undefined string, null, or the default placeholder to avoid runtime crashes.
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === 'undefined') return null;
+  
+  if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
+    console.warn("LGPD Guardian: API Key do Gemini não configurada. Verifique o arquivo .env ou as variáveis de ambiente da Vercel.");
+    return null;
+  }
   return new GoogleGenAI({ apiKey });
 };
 
@@ -16,7 +20,7 @@ export const generateLegalDocument = async (
   dataTypes: string[]
 ): Promise<string> => {
   const ai = getAiClient();
-  if (!ai) return "Erro: Chave de API não configurada ou inválida. Verifique as variáveis de ambiente.";
+  if (!ai) return "Erro: Chave de API não configurada. Configure a variável API_KEY no arquivo .env ou no painel da Vercel.";
 
   const prompt = `
     Atue como um advogado especialista em Proteção de Dados e LGPD (Lei Geral de Proteção de Dados - Brasil).
@@ -51,7 +55,7 @@ export const generateLegalDocument = async (
 
 export const analyzeIncident = async (description: string): Promise<{ severity: IncidentSeverity; analysis: string }> => {
   const ai = getAiClient();
-  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente ou inválida." };
+  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente. Configure o .env." };
 
   const prompt = `
     Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
@@ -85,7 +89,7 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
 
 export const generateAwarenessPost = async (topic: string, category: AwarenessCategory): Promise<{ title: string; content: string; quiz: any }> => {
   const ai = getAiClient();
-  if (!ai) throw new Error("Chave de API ausente");
+  if (!ai) throw new Error("Chave de API ausente. Verifique o .env");
 
   const prompt = `
     Atue como um Especialista em Cultura de Privacidade e LGPD.
@@ -132,7 +136,7 @@ export const generateAwarenessPost = async (topic: string, category: AwarenessCa
     console.error("Gemini API Error:", error);
     return {
       title: "Erro na Geração",
-      content: "Não foi possível gerar o conteúdo neste momento.",
+      content: "Não foi possível gerar o conteúdo neste momento. Verifique a chave de API.",
       quiz: null
     };
   }
