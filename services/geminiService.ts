@@ -1,4 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// ...
+
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY; // ou como você pega a chave
+  if (!apiKey) return null;
+  return new GoogleGenerativeAI(apiKey);
+};
 import { IncidentSeverity, AwarenessCategory } from "../types";
 
 const getAiClient = () => {
@@ -65,29 +73,33 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
     A análise deve ser escrita em Português do Brasil.
     
     Retorne a resposta como um objeto JSON válido com as chaves: "severity" (string enum: low, medium, high, critical) e "analysis" (string em português).
-  `;
-
+export const generateLegalDocument = async (
+  prompt: string // Assumindo que o argumento 'prompt' vem daqui, ajuste se necessário
+) => {
+  const ai = getAiClient(); // Certifique-se que getAiClient retorna 'new GoogleGenerativeAI(API_KEY)'
+  
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+    // CORREÇÃO: Sintaxe da nova biblioteca @google/generative-ai
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     });
 
-    const json = JSON.parse(response.text || "{}");
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text(); // Agora é uma função
+
+    const json = JSON.parse(responseText || "{}");
     return {
-      severity: (json.severity as IncidentSeverity) || IncidentSeverity.MEDIUM,
+      severity: json.severity || "MEDIUM", // Ajuste conforme seu enum
       analysis: json.analysis || "Não foi possível analisar o incidente."
     };
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro durante a análise. Verifique logs." };
+    return { severity: "MEDIUM", analysis: "Erro durante a análise. Verifique logs." };
   }
 };
 
-export const generateAwarenessPost = async (topic: string, category: AwarenessCategory): Promise<{ title: string; content: string; quiz: any }> => {
+export const generateAwarenessPost = async (topic: string, category: string): Promise<{ title: string; content: string; quiz: any }> => {
   const ai = getAiClient();
   if (!ai) throw new Error("Chave de API ausente. Verifique o .env");
 
@@ -122,16 +134,16 @@ export const generateAwarenessPost = async (topic: string, category: AwarenessCa
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+    // CORREÇÃO: Sintaxe da nova biblioteca
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     });
-    
-    const text = response.text || "{}";
-    return JSON.parse(text);
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    return JSON.parse(text || "{}");
   } catch (error) {
     console.error("Gemini API Error:", error);
     return {
