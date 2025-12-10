@@ -2,8 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 import { IncidentSeverity, AwarenessCategory } from "../types";
 
 const getAiClient = () => {
+  // Vite replaces process.env.API_KEY with the actual string during build.
+  // We check for specific undefined string or null to avoid runtime crashes.
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey || apiKey === 'undefined') return null;
   return new GoogleGenAI({ apiKey });
 };
 
@@ -14,7 +16,7 @@ export const generateLegalDocument = async (
   dataTypes: string[]
 ): Promise<string> => {
   const ai = getAiClient();
-  if (!ai) return "Erro: Chave de API não encontrada.";
+  if (!ai) return "Erro: Chave de API não configurada ou inválida. Verifique as variáveis de ambiente.";
 
   const prompt = `
     Atue como um advogado especialista em Proteção de Dados e LGPD (Lei Geral de Proteção de Dados - Brasil).
@@ -43,13 +45,13 @@ export const generateLegalDocument = async (
     return response.text || "Falha ao gerar o documento.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Ocorreu um erro ao gerar o documento. Por favor, verifique sua conexão ou tente novamente.";
+    return "Ocorreu um erro ao gerar o documento. Por favor, verifique sua conexão ou a validade da chave de API.";
   }
 };
 
 export const analyzeIncident = async (description: string): Promise<{ severity: IncidentSeverity; analysis: string }> => {
   const ai = getAiClient();
-  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente." };
+  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente ou inválida." };
 
   const prompt = `
     Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
@@ -77,7 +79,7 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
     };
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro durante a análise." };
+    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro durante a análise. Verifique logs." };
   }
 };
 
