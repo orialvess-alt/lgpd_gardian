@@ -1,59 +1,73 @@
 # Guia de Publicação - LGPD Guardian
 
-Este guia cobre como colocar o projeto no GitHub e publicá-lo na Vercel garantindo que a Inteligência Artificial funcione.
+Este guia cobre como colocar o projeto no GitHub e publicá-lo na Vercel, garantindo que a Inteligência Artificial funcione corretamente.
 
 ## 1. GitHub (Armazenamento do Código)
 
-Abra o terminal na pasta do projeto e execute os comandos abaixo sequencialmente:
+Se você ainda não enviou seu código para o GitHub, siga estes passos. Abra o terminal na pasta do projeto e execute:
 
 ```bash
-# 1. Inicializar o repositório git
-git init
+# 1. Inicializar o repositório git (se ainda não o fez)
+git init -b main
 
-# 2. Adicionar todos os arquivos
+# 2. Adicionar todos os arquivos para o controle de versão
 git add .
 
-# 3. Criar o primeiro commit
-git commit -m "Initial commit: LGPD Guardian App"
+# 3. Criar o primeiro "commit" (um ponto salvo na história do projeto)
+git commit -m "Initial commit: LGPD Guardian App v1.0"
 
-# 4. (No site do GitHub) Crie um novo repositório vazio.
-# 5. Conecte o repositório local ao remoto (substitua a URL abaixo pela do seu repositório):
-# git remote add origin https://github.com/SEU_USUARIO/NOME_DO_REPO.git
+# 4. Crie um novo repositório vazio no site do GitHub.
 
-# 6. Envie o código
-# git push -u origin master
+# 5. Conecte seu projeto local ao repositório remoto que você criou.
+#    (Substitua a URL abaixo pela URL do seu repositório no GitHub)
+#    ex: git remote add origin https://github.com/seu-usuario/lgpd-guardian.git
+
+# 6. Envie o código do seu computador para o GitHub.
+#    git push -u origin main
 ```
 
-## 2. Vercel (Publicação em Produção)
+---
 
-Para que a aplicação funcione na internet, usaremos a Vercel.
+## 2. Vercel (Publicação na Internet)
 
-1.  Crie uma conta em [vercel.com](https://vercel.com) (pode usar o login do GitHub).
-2.  No painel, clique em **"Add New..."** -> **"Project"**.
-3.  Selecione o repositório do GitHub que você acabou de criar e clique em **Import**.
+A Vercel vai ler seu código do GitHub e publicá-lo online.
 
-### ⚠️ ETAPA CRÍTICA: Configuração da API (Environment Variables) ⚠️
+1.  Crie uma conta em [vercel.com](https://vercel.com) (você pode usar sua conta do GitHub para se registrar).
+2.  No painel principal, clique em **"Add New..."** e depois em **"Project"**.
+3.  Selecione o repositório do GitHub do seu projeto (`lgpd-guardian`) e clique em **"Import"**.
 
-Antes de clicar em "Deploy", você **PRECISA** configurar a chave da API, caso contrário a IA não funcionará.
+### ⚠️ ETAPA CRÍTICA: Configuração da Chave da IA ⚠️
 
-1.  Na tela de configuração do projeto (onde tem o botão "Deploy"), procure a seção **Environment Variables**.
-2.  Adicione a seguinte variável:
-    *   **Key:** `API_KEY`
-    *   **Value:** `AIzaSyDa8pnfqkPiBJBAUnL6wEL63XWdjEnHfzU`
-3.  Clique em **Add**.
+Antes de clicar em "Deploy", você **PRECISA** informar à Vercel qual é a sua chave de API do Gemini. Sem isso, a IA não funcionará.
 
-*Nota: O valor acima é a chave que você forneceu. Em um cenário real de produção, certifique-se de restringir esta chave no Console do Google Cloud para aceitar requisições apenas do domínio da sua aplicação Vercel.*
+1.  Na tela de configuração do projeto (antes do deploy final), encontre a seção chamada **"Environment Variables"**.
 
-### 3. Finalizar
+2.  Crie uma nova variável com os seguintes dados:
+    *   **Name (Nome/Chave):** `API_KEY`
+    *   **Value (Valor):** Cole aqui a sua chave de API do Google AI. (Ex: `AIzaSy...`)
 
-1.  Clique em **Deploy**.
-2.  Aguarde a construção (Build).
-3.  Quando terminar, clique na imagem do site para abrir sua aplicação ao vivo.
+3.  Clique no botão **"Add"** para salvar a variável.
 
-## Solução de Problemas
+    
 
-**A IA não está gerando texto:**
-1.  Vá no painel da Vercel do seu projeto.
-2.  Clique em **Settings** > **Environment Variables**.
-3.  Verifique se `API_KEY` está lá e se o valor está correto.
-4.  Se você alterou a chave *depois* do deploy, vá na aba **Deployments**, clique nos três pontinhos do último deploy e escolha **Redeploy** para que a nova chave seja embutida no código.
+### 3. Finalizar a Publicação
+
+1.  Agora sim, clique no botão azul **"Deploy"**.
+2.  A Vercel irá construir (build) seu projeto. Isso pode levar alguns minutos.
+3.  Quando terminar, você verá uma tela de sucesso com uma imagem do seu site. Clique nela para visitar sua aplicação publicada e funcionando!
+
+---
+
+## Solução de Problemas Comuns
+
+**"A IA funciona no meu computador, mas não no site da Vercel."**
+
+Este é o problema mais comum e quase sempre está relacionado à variável de ambiente.
+
+1.  **Verifique a Variável:** Vá ao painel do seu projeto na Vercel. Clique na aba **"Settings"**, e depois em **"Environment Variables"** no menu lateral. Confirme se a variável `API_KEY` existe e se o valor dela está 100% correto (sem espaços extras, etc.).
+
+2.  **Faça o Redeploy:** Se você adicionou ou corrigiu a `API_KEY` *depois* de já ter feito o deploy inicial, a Vercel não aplica a mudança automaticamente. Você precisa forçar uma nova construção:
+    *   Vá na aba **"Deployments"** do seu projeto na Vercel.
+    *   Encontre o deploy mais recente (o do topo da lista).
+    *   Clique no menu de três pontos (`...`) à direita e selecione **"Redeploy"**.
+    *   Confirme o redeploy. Isso irá reconstruir o projeto, agora com a chave correta.

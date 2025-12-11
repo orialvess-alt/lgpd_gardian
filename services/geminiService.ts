@@ -1,13 +1,21 @@
-import { GoogleGenAI } from "@google/genai";
+// FIX: Import `Type` for defining response schemas.
+import { GoogleGenAI, Type } from "@google/genai";
 import { IncidentSeverity, AwarenessCategory, Quiz } from "../types";
 
 const getAiClient = () => {
-  // Vite replaces process.env.API_KEY with the actual string during build via 'define' in vite.config.ts.
+  // Vite substitui process.env.API_KEY pela string real durante o build.
   const apiKey = process.env.API_KEY;
   
   if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
-    console.error("LGPD Guardian Error: API Key inválida ou não encontrada.");
-    console.info("Dica para Produção (Vercel): Vá em Settings > Environment Variables e adicione a chave 'API_KEY'.");
+    console.error("LGPD Guardian Error: API Key inválida ou não configurada.");
+    
+    // FIX: Replaced `import.meta.env.PROD` with `process.env.NODE_ENV` to resolve TypeScript error.
+    // This check provides more helpful error messages depending on the environment.
+    if (process.env.NODE_ENV === 'production') {
+      console.error("--> AMBIENTE DE PRODUÇÃO (VERCEL) DETECTADO. Vá em Settings > Environment Variables no seu projeto Vercel e adicione a chave 'API_KEY'. Faça um 'Redeploy' depois de salvar.");
+    } else {
+      console.info("--> Dica para Desenvolvimento: Verifique se o arquivo '.env' existe na raiz do projeto e contém a linha 'API_KEY=AIza...'.");
+    }
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -20,7 +28,7 @@ export const generateLegalDocument = async (
   dataTypes: string[]
 ): Promise<string> => {
   const ai = getAiClient();
-  if (!ai) return "Erro de Configuração: Chave de API da IA não encontrada. Verifique as configurações do servidor (Environment Variables).";
+  if (!ai) return "Erro de Configuração: Chave de API da IA não encontrada. Verifique as configurações de Environment Variables na Vercel.";
 
   const prompt = `
     Atue como um advogado especialista em Proteção de Dados e LGPD (Lei Geral de Proteção de Dados - Brasil).
@@ -71,8 +79,23 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
+      // FIX: Added responseSchema to ensure structured JSON output as per Gemini API guidelines.
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            severity: {
+              type: Type.STRING,
+              description: 'The incident severity, one of: low, medium, high, critical'
+            },
+            analysis: {
+              type: Type.STRING,
+              description: 'A brief analysis and recommended actions in Brazilian Portuguese.'
+            }
+          },
+          required: ['severity', 'analysis']
+        }
       }
     });
 
@@ -125,8 +148,30 @@ export const generateAwarenessPost = async (topic: string, category: AwarenessCa
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
+      // FIX: Added responseSchema to ensure structured JSON output as per Gemini API guidelines.
       config: {
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            content: { type: Type.STRING },
+            quiz: {
+              type: Type.OBJECT,
+              properties: {
+                question: { type: Type.STRING },
+                options: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
+                correctAnswerIndex: { type: Type.INTEGER },
+                explanation: { type: Type.STRING }
+              },
+              required: ['question', 'options', 'correctAnswerIndex', 'explanation']
+            }
+          },
+          required: ['title', 'content', 'quiz']
+        }
       }
     });
     
