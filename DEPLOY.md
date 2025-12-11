@@ -40,15 +40,15 @@ A Vercel vai ler seu código do GitHub e publicá-lo online.
 
 Antes de clicar em "Deploy", você **PRECISA** informar à Vercel qual é a sua chave de API do Gemini. Sem isso, a IA não funcionará.
 
+O projeto usa **Vite**, que por segurança só expõe variáveis de ambiente que começam com o prefixo `VITE_`.
+
 1.  Na tela de configuração do projeto (antes do deploy final), encontre a seção chamada **"Environment Variables"**.
 
 2.  Crie uma nova variável com os seguintes dados:
-    *   **Name (Nome/Chave):** `API_KEY`
+    *   **Name (Nome/Chave):** `VITE_API_KEY` (É crucial começar com `VITE_`)
     *   **Value (Valor):** Cole aqui a sua chave de API do Google AI. (Ex: `AIzaSy...`)
 
 3.  Clique no botão **"Add"** para salvar a variável.
-
-    
 
 ### 3. Finalizar a Publicação
 
@@ -64,9 +64,9 @@ Antes de clicar em "Deploy", você **PRECISA** informar à Vercel qual é a sua 
 
 Este é o problema mais comum e quase sempre está relacionado à variável de ambiente.
 
-1.  **Verifique a Variável:** Vá ao painel do seu projeto na Vercel. Clique na aba **"Settings"**, e depois em **"Environment Variables"** no menu lateral. Confirme se a variável `API_KEY` existe e se o valor dela está 100% correto (sem espaços extras, etc.).
+1.  **Verifique o Nome e o Valor:** Vá ao painel do seu projeto na Vercel. Clique na aba **"Settings"**, e depois em **"Environment Variables"** no menu lateral. Confirme se a variável se chama **exatamente** `VITE_API_KEY` e se o valor dela está 100% correto (sem espaços extras, etc.).
 
-2.  **Faça o Redeploy:** Se você adicionou ou corrigiu a `API_KEY` *depois* de já ter feito o deploy inicial, a Vercel não aplica a mudança automaticamente. Você precisa forçar uma nova construção:
+2.  **Faça o Redeploy:** Se você adicionou ou corrigiu a `VITE_API_KEY` *depois* de já ter feito o deploy inicial, a Vercel não aplica a mudança automaticamente. Você precisa forçar uma nova construção:
     *   Vá na aba **"Deployments"** do seu projeto na Vercel.
     *   Encontre o deploy mais recente (o do topo da lista).
     *   Clique no menu de três pontos (`...`) à direita e selecione **"Redeploy"**.

@@ -3,19 +3,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { IncidentSeverity, AwarenessCategory, Quiz } from "../types";
 
 const getAiClient = () => {
-  // Vite substitui process.env.API_KEY pela string real durante o build.
+  // FIX: Per Gemini API guidelines, API key must be from process.env.API_KEY.
+  // This also resolves the TypeScript error with `import.meta.env`.
+  // User-facing prompts for setting the key are disallowed by the guidelines.
   const apiKey = process.env.API_KEY;
   
-  if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
+  if (!apiKey) {
     console.error("LGPD Guardian Error: API Key inválida ou não configurada.");
-    
-    // FIX: Replaced `import.meta.env.PROD` with `process.env.NODE_ENV` to resolve TypeScript error.
-    // This check provides more helpful error messages depending on the environment.
-    if (process.env.NODE_ENV === 'production') {
-      console.error("--> AMBIENTE DE PRODUÇÃO (VERCEL) DETECTADO. Vá em Settings > Environment Variables no seu projeto Vercel e adicione a chave 'API_KEY'. Faça um 'Redeploy' depois de salvar.");
-    } else {
-      console.info("--> Dica para Desenvolvimento: Verifique se o arquivo '.env' existe na raiz do projeto e contém a linha 'API_KEY=AIza...'.");
-    }
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -28,7 +22,8 @@ export const generateLegalDocument = async (
   dataTypes: string[]
 ): Promise<string> => {
   const ai = getAiClient();
-  if (!ai) return "Erro de Configuração: Chave de API da IA não encontrada. Verifique as configurações de Environment Variables na Vercel.";
+  // FIX: Updated error message to be generic and not prompt for API key, per guidelines.
+  if (!ai) return "Erro de Configuração: O serviço de IA não está configurado corretamente.";
 
   const prompt = `
     Atue como um advogado especialista em Proteção de Dados e LGPD (Lei Geral de Proteção de Dados - Brasil).
@@ -63,7 +58,8 @@ export const generateLegalDocument = async (
 
 export const analyzeIncident = async (description: string): Promise<{ severity: IncidentSeverity; analysis: string }> => {
   const ai = getAiClient();
-  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Erro: Chave de API não configurada no painel da Vercel." };
+  // FIX: Updated error message to be generic and not prompt for API key, per guidelines.
+  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Erro: O serviço de IA não está configurado corretamente." };
 
   const prompt = `
     Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
@@ -112,7 +108,8 @@ export const analyzeIncident = async (description: string): Promise<{ severity: 
 
 export const generateAwarenessPost = async (topic: string, category: AwarenessCategory): Promise<{ title: string; content: string; quiz: Quiz | null }> => {
   const ai = getAiClient();
-  if (!ai) throw new Error("Chave de API não configurada. Configure API_KEY nas variáveis de ambiente.");
+  // FIX: Updated error message to be generic and not prompt for API key, per guidelines.
+  if (!ai) throw new Error("O serviço de IA não está configurado corretamente.");
 
   const prompt = `
     Atue como um Especialista em Cultura de Privacidade e LGPD.

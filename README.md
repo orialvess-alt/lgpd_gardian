@@ -8,7 +8,15 @@ Plataforma de conformidade LGPD multilocatário com IA.
 
 ### 1. Desenvolvimento Local
 
-A chave de API já foi configurada no arquivo `.env`. Basta rodar:
+Para rodar o projeto localmente, crie um arquivo chamado `.env` na raiz do projeto e adicione a seguinte linha:
+
+```
+VITE_API_KEY=SUA_CHAVE_API_AQUI
+```
+
+Substitua `SUA_CHAVE_API_AQUI` pela sua chave real (Ex: `AIzaSy...`).
+
+Depois, rode os comandos:
 
 ```bash
 npm install
@@ -22,8 +30,8 @@ Ao publicar este projeto na Vercel, o arquivo `.env` é ignorado por segurança.
 1.  Acesse seu projeto no Dashboard da Vercel.
 2.  Vá em **Settings** (Configurações) -> **Environment Variables** (Variáveis de Ambiente).
 3.  Adicione uma nova variável:
-    *   **Key:** `API_KEY`
-    *   **Value:** `AIzaSyDa8pnfqkPiBJBAUnL6wEL63XWdjEnHfzU`
+    *   **Key:** `VITE_API_KEY`
+    *   **Value:** `AIzaSyDa8pnfqkPiBJBAUnL6wEL63XWdjEnHfzU` (ou a sua chave)
 4.  Clique em **Save**.
 5.  Vá em **Deployments** e faça um "Redeploy" para que a nova variável entre em vigor.
 
