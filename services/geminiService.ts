@@ -22,7 +22,7 @@ const getAiModel = (modelName: string = "gemini-1.5-flash", jsonMode: boolean = 
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   // Verificações de segurança para a chave
-  if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
+  if (!apiKey || apiKey === AIzaSyDsO4scfSeNt3FdJ6B_0yNguzGX-xqb7GE' || apiKey === 'AIzaSyDsO4scfSeNt3FdJ6B_0yNguzGX-xqb7GE') {
     console.warn("LGPD Guardian: API Key do Gemini não configurada.");
     return null;
   }
