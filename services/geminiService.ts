@@ -19,28 +19,36 @@ const cleanJsonString = (text: string): string => {
  * Retorna null se a chave não estiver configurada.
  */
 const getAiModel = (modelName: string = "gemini-1.5-flash", jsonMode: boolean = false) => {
+  // Tenta ler a variável
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-  // Verificações de segurança para a chave
-  if (!apiKey || apiKey === AIzaSyDsO4scfSeNt3FdJ6B_0yNguzGX-xqb7GE' || apiKey === 'AIzaSyDsO4scfSeNt3FdJ6B_0yNguzGX-xqb7GE') {
-    console.warn("LGPD Guardian: API Key do Gemini não configurada.");
+  // --- ÁREA DE DEBUG (Apague depois de resolver) ---
+  console.log("--- DIAGNÓSTICO DO GEMINI ---");
+  console.log("1. Buscando variável: VITE_GEMINI_API_KEY");
+  
+  if (!apiKey) {
+    console.error("ERRO CRÍTICO: A chave está undefined/vazia!");
+    console.log("Dica: Verifique se o nome no .env é EXATAMENTE 'VITE_GEMINI_API_KEY'");
+  } else {
+    console.log("2. Status da Chave: ENCONTRADA ✅");
+    console.log("3. Início da Chave:", apiKey.substring(0, 5) + "..."); 
+    // Se aparecer AIzaS... aqui, o código está lendo corretamente.
+  }
+  console.log("---------------------------------");
+  // ------------------------------------------------
+
+  if (!apiKey || apiKey === 'undefined') {
     return null;
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  // ... resto do código continua igual ...
+  const config: any = { temperature: 0.7 };
+  if (jsonMode) config.responseMimeType = "application/json";
 
-  const config: GenerationConfig = {
-    temperature: 0.7, // Criatividade balanceada
-  };
-
-  // Ativa o 'JSON Mode' nativo do Gemini 1.5 para garantir estrutura
-  if (jsonMode) {
-    config.responseMimeType = "application/json";
-  }
-
-  return genAI.getGenerativeModel({
+  return genAI.getGenerativeModel({ 
     model: modelName,
-    generationConfig: config,
+    generationConfig: config
   });
 };
 
