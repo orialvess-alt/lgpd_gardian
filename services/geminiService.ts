@@ -1,58 +1,17 @@
-import { GoogleGenerativeAI, GenerationConfig } from "@google/generative-ai";
-// Certifique-se de que seus tipos estão definidos corretamente neste caminho
+import { GoogleGenAI } from "@google/genai";
 import { IncidentSeverity, AwarenessCategory, Quiz } from "../types";
 
-// --- Utilitários ---
-
-/**
- * Remove formatação Markdown (ex: ```json ... ```) que o modelo possa incluir.
- */
-const cleanJsonString = (text: string): string => {
-  if (!text) return "{}";
-  // Remove o bloco de código markdown inicial e final
-  let clean = text.replace(/```json\s*/g, "").replace(/```/g, "");
-  return clean.trim();
-};
-
-/**
- * Inicializa o cliente do Google Generative AI.
- * Retorna null se a chave não estiver configurada.
- */
-const getAiModel = (modelName: string = "gemini-1.5-flash", jsonMode: boolean = false) => {
-  // Tenta ler a variável
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  // --- ÁREA DE DEBUG (Apague depois de resolver) ---
-  console.log("--- DIAGNÓSTICO DO GEMINI ---");
-  console.log("1. Buscando variável: VITE_GEMINI_API_KEY");
+const getAiClient = () => {
+  // Vite replaces process.env.API_KEY with the actual string during build via 'define' in vite.config.ts.
+  const apiKey = process.env.API_KEY;
   
-  if (!apiKey) {
-    console.error("ERRO CRÍTICO: A chave está undefined/vazia!");
-    console.log("Dica: Verifique se o nome no .env é EXATAMENTE 'VITE_GEMINI_API_KEY'");
-  } else {
-    console.log("2. Status da Chave: ENCONTRADA ✅");
-    console.log("3. Início da Chave:", apiKey.substring(0, 5) + "..."); 
-    // Se aparecer AIzaS... aqui, o código está lendo corretamente.
-  }
-  console.log("---------------------------------");
-  // ------------------------------------------------
-
-  if (!apiKey || apiKey === 'undefined') {
+  if (!apiKey || apiKey === 'undefined' || apiKey === 'SUA_CHAVE_AQUI') {
+    console.error("LGPD Guardian Error: API Key inválida ou não encontrada.");
+    console.info("Dica para Produção (Vercel): Vá em Settings > Environment Variables e adicione a chave 'API_KEY'.");
     return null;
   }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // ... resto do código continua igual ...
-  const config: any = { temperature: 0.7 };
-  if (jsonMode) config.responseMimeType = "application/json";
-
-  return genAI.getGenerativeModel({ 
-    model: modelName,
-    generationConfig: config
-  });
+  return new GoogleGenAI({ apiKey });
 };
-
-// --- Funções Exportadas ---
 
 export const generateLegalDocument = async (
   docType: string,
@@ -60,8 +19,8 @@ export const generateLegalDocument = async (
   industry: string,
   dataTypes: string[]
 ): Promise<string> => {
-  const model = getAiModel("gemini-1.5-flash", false); // Modo texto
-  if (!model) return "Erro: Chave de API não configurada. Verifique o arquivo .env.";
+  const ai = getAiClient();
+  if (!ai) return "Erro de Configuração: Chave de API da IA não encontrada. Verifique as configurações do servidor (Environment Variables).";
 
   const prompt = `
     Atue como um advogado especialista em Proteção de Dados e LGPD (Lei Geral de Proteção de Dados - Brasil).
@@ -78,59 +37,59 @@ export const generateLegalDocument = async (
     2. Use linguagem jurídica clara, porém formal.
     3. Inclua seções essenciais como: Definições, Finalidade do Tratamento, Direitos dos Titulares, Segurança, Retenção e Contato do Encarregado (DPO).
     4. Formate a saída usando Markdown limpo (Use ## para títulos de seções, ** para ênfase, - para listas).
-    5. NÃO inclua saudações ou explicações fora do documento. Retorne APENAS o texto do documento.
+    5. NÃO inclua saudações ou explicações fora do documento. Retorne apenas o texto do documento.
     6. Escreva em Português do Brasil.
   `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text || "Falha ao gerar o documento.";
   } catch (error) {
-    console.error("Gemini API Error (Doc Gen):", error);
-    return "Ocorreu um erro ao gerar o documento. Por favor, verifique sua conexão ou a validade da chave de API.";
+    console.error("Gemini API Error:", error);
+    return "Ocorreu um erro técnico ao comunicar com a IA. Verifique se a Chave de API é válida e tem permissões para o modelo 'gemini-2.5-flash'.";
   }
 };
 
 export const analyzeIncident = async (description: string): Promise<{ severity: IncidentSeverity; analysis: string }> => {
-  const model = getAiModel("gemini-1.5-flash", true); // Modo JSON
-  
-  // Fallback seguro se não houver modelo
-  if (!model) {
-    return { severity: IncidentSeverity.MEDIUM, analysis: "Chave de API ausente. Configure o .env." };
-  }
+  const ai = getAiClient();
+  if (!ai) return { severity: IncidentSeverity.MEDIUM, analysis: "Erro: Chave de API não configurada no painel da Vercel." };
 
   const prompt = `
     Analise a seguinte descrição de incidente de segurança sob o contexto da LGPD brasileira.
     Descrição: "${description}"
     
     Determine a provável severidade (low, medium, high, ou critical) e forneça uma breve justificativa e ações imediatas recomendadas.
+    A análise deve ser escrita em Português do Brasil.
     
-    Retorne APENAS um objeto JSON com as chaves:
-    - "severity": (string enum: low, medium, high, critical)
-    - "analysis": (string em português do Brasil)
+    Retorne a resposta como um objeto JSON válido com as chaves: "severity" (string enum: low, medium, high, critical) e "analysis" (string em português).
   `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = cleanJsonString(response.text());
-    
-    const json = JSON.parse(text);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
 
+    const json = JSON.parse(response.text || "{}");
     return {
       severity: (json.severity as IncidentSeverity) || IncidentSeverity.MEDIUM,
-      analysis: json.analysis || "Não foi possível analisar o incidente."
+      analysis: json.analysis || "Não foi possível analisar o incidente automaticamente."
     };
   } catch (error) {
-    console.error("Gemini API Error (Incident):", error);
-    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro técnico durante a análise do incidente." };
+    console.error("Gemini API Error:", error);
+    return { severity: IncidentSeverity.MEDIUM, analysis: "Erro de conexão com a IA. Tente novamente mais tarde." };
   }
 };
 
 export const generateAwarenessPost = async (topic: string, category: AwarenessCategory): Promise<{ title: string; content: string; quiz: Quiz | null }> => {
-  const model = getAiModel("gemini-1.5-flash", true); // Modo JSON
-  if (!model) throw new Error("Chave de API ausente. Verifique o .env");
+  const ai = getAiClient();
+  if (!ai) throw new Error("Chave de API não configurada. Configure API_KEY nas variáveis de ambiente.");
 
   const prompt = `
     Atue como um Especialista em Cultura de Privacidade e LGPD.
@@ -141,35 +100,43 @@ export const generateAwarenessPost = async (topic: string, category: AwarenessCa
     
     Objetivo: Educar colaboradores e criar uma cultura de proteção de dados.
     
-    Requisitos:
-    1. Conteúdo educativo e prático (foco no dia a dia).
+    Requisitos do Conteúdo:
+    1. Educativo e prático (foco no dia a dia).
     2. Linguagem acessível mas profissional.
     3. Markdown rico no conteúdo (negrito, listas).
     
-    Retorne APENAS um JSON válido com esta estrutura exata:
+    Requisitos do Quiz:
+    Inclua uma pergunta de múltipla escolha para testar o conhecimento adquirido no texto.
+    
+    Formato de Resposta (JSON Obrigatório):
     {
       "title": "Título criativo e curto com emoji",
       "content": "Texto do artigo em Markdown...",
       "quiz": {
         "question": "A pergunta do teste",
         "options": ["Opção 1", "Opção 2", "Opção 3", "Opção 4"],
-        "correctAnswerIndex": 0,
+        "correctAnswerIndex": 0, // índice da resposta correta (0-3)
         "explanation": "Breve explicação do porquê esta é a correta."
       }
     }
   `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = cleanJsonString(response.text());
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
     
+    const text = response.text || "{}";
     return JSON.parse(text);
   } catch (error) {
-    console.error("Gemini API Error (Awareness):", error);
+    console.error("Gemini API Error:", error);
     return {
       title: "Erro na Geração",
-      content: "Não foi possível gerar o conteúdo neste momento. Verifique a chave de API.",
+      content: "Não foi possível gerar o conteúdo devido a um erro na configuração da API.",
       quiz: null
     };
   }
